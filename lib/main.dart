@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
- 
+
 import './models/transaction.dart';
+import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
 import './widgets/transaction_list.dart';
 
@@ -14,9 +15,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           primarySwatch: Colors.green,
           accentColor: Colors.lightGreen,
+          errorColor: Colors.red,
           fontFamily: "San-Francisco",
           textTheme: ThemeData.light().textTheme.copyWith(
-                title: TextStyle(
+                headline6: TextStyle(
                   fontFamily: "Montserrat",
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -24,7 +26,7 @@ class MyApp extends StatelessWidget {
               ),
           appBarTheme: AppBarTheme(
             textTheme: ThemeData.light().textTheme.copyWith(
-                  title: TextStyle(
+                  headline6: TextStyle(
                     fontFamily: "Montserrat",
                     fontSize: 23,
                     fontWeight: FontWeight.bold,
@@ -52,16 +54,36 @@ class _MyHomePageState extends State<MyHomePage> {
     //     date: DateTime.now()),
   ];
 
-  void _addNewTransaction(String title, double amount) {
+//dynamique calculator properties => getter;
+  List<Transaction> get _recentTransactions {
+    //on récupère les transactions qui sont après la date d'aujourd'hui moins 07jours.
+    //ce sont elles les transactions les plus recentes.
+
+    return _userTransactions.where((tx) {
+      return tx.date.isAfter(DateTime.now().subtract(
+        Duration(days: 7),
+      ));
+    }).toList(); // where return an iterable but we expected a list
+  }
+
+  void _addNewTransaction(String title, double amount, DateTime selectedDate) {
     final newTx = Transaction(
       title: title,
       amount: amount,
       id: DateTime.now().toString(),
-      date: DateTime.now(),
+      date: selectedDate,
     );
 
     setState(() {
       _userTransactions.add(newTx);
+    });
+  }
+
+  void _deleteTransaction(String id) {
+    setState(() {
+      _userTransactions.removeWhere((element) {
+        return element.id == id;
+      });
     });
   }
 
@@ -71,7 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (builderCtx) {
           return GestureDetector(
             onTap: () {},
-            child: NewTransaction(_addNewTransaction),
+            child: SingleChildScrollView(
+                child: NewTransaction(_addNewTransaction)),
             behavior:
                 HitTestBehavior.opaque, //important for the gesture behavior
           );
@@ -81,6 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           'Expense Planner',
@@ -101,26 +125,24 @@ class _MyHomePageState extends State<MyHomePage> {
           //and left to right on a row.
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Container(
-              child: Card(
-                //Cards By default depends of the size of his child
-                //Text widget have the size of the text so you need a container
-                //to modify the size.
-                child: Text("Chart"),
-                elevation: 5,
-              ),
-              width: double.infinity,
-            ),
+            Chart(_recentTransactions),
             _userTransactions.isEmpty
                 ? Column(
                     children: [
+                      Container(
+                        height: 320,
+                        child: Image.asset(
+                          "assets/images/Startup life-pana.png",
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                       Text(
-                        "Aucune Transaction ajout !",
-                        style: Theme.of(context).textTheme.title,
+                        "Aucune transaction ajoutée !",
+                        style: Theme.of(context).textTheme.headline6,
                       ),
                     ],
                   )
-                : TransactionList(_userTransactions),
+                : TransactionList(_userTransactions, _deleteTransaction),
           ],
         ),
       ),
