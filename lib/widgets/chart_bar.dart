@@ -5,7 +5,9 @@ class ChartBar extends StatelessWidget {
   final double spendingAmount;
   final double spendingPctOfTotal;
 
-  ChartBar({this.label, this.spendingAmount, this.spendingPctOfTotal});
+//const au niveau du constructeur peut favoriser a augmenter la perfomance
+//on l'utilise dans le cas où les propriétés de classe ne peuvent pas changer(final).
+  const ChartBar({this.label, this.spendingAmount, this.spendingPctOfTotal});
 
   @override
   Widget build(BuildContext context) {
