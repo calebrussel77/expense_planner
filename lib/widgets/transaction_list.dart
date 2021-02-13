@@ -11,44 +11,72 @@ class TransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 500,
-      //ListView possede une heigth infinie donc ç ne marche pas avec expended
-      child: ListView.builder(
-        itemBuilder: (ctx, index) {
-          return Card(
-            elevation: 5,
-            margin: EdgeInsets.symmetric(
-              vertical: 8,
-              horizontal: 5,
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                radius: 30,
-                child: Padding(
-                  padding: EdgeInsets.all(6),
-                  child: FittedBox(
-                    child: Text('\$${transactions[index].amount}'),
+    return transactions.isEmpty
+        ? LayoutBuilder(builder: (ctx, constraints) {
+            return Column(
+              children: [
+                Container(
+                  height: constraints.maxHeight * 0.75,
+                  child: Image.asset(
+                    "assets/images/Startup life-pana.png",
+                    fit: BoxFit.cover,
                   ),
                 ),
-              ),
-              title: Text(
-                transactions[index].title,
-                style: Theme.of(context).textTheme.headline6,
-              ),
-              subtitle: Text(
-                DateFormat.yMMMd().format(transactions[index].date),
-              ),
-              trailing: IconButton(
-                icon: Icon(Icons.delete),
-                color: Theme.of(context).errorColor,
-                onPressed: () => deleteTransaction(transactions[index].id),
-              ),
-            ),
+                Text(
+                  "Aucune transaction ajoutée !",
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+              ],
+            );
+          })
+        : ListView.builder(
+            itemBuilder: (ctx, index) {
+              return Card(
+                elevation: 5,
+                margin: EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 5,
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    radius: 30,
+                    child: Padding(
+                      padding: EdgeInsets.all(6),
+                      child: FittedBox(
+                        child: Text('\$${transactions[index].amount}'),
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    transactions[index].title,
+                    style: Theme.of(context).textTheme.headline6,
+                  ),
+                  subtitle: Text(
+                    DateFormat.yMMMd().format(transactions[index].date),
+                  ),
+                  trailing: MediaQuery.of(context).size.width > 360
+                      ? TextButton.icon(
+                          icon: Icon(Icons.delete),
+                          label: Text('Supprimer'),
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                Colors.red[50]),
+                            foregroundColor:
+                                MaterialStateProperty.all<Color>(Colors.red),
+                          ),
+                          onPressed: () =>
+                              deleteTransaction(transactions[index].id),
+                        )
+                      : IconButton(
+                          icon: Icon(Icons.delete),
+                          color: Theme.of(context).errorColor,
+                          onPressed: () =>
+                              deleteTransaction(transactions[index].id),
+                        ),
+                ),
+              );
+            },
+            itemCount: transactions.length,
           );
-        },
-        itemCount: transactions.length,
-      ),
-    );
   }
 }

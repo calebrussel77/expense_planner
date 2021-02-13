@@ -1,11 +1,25 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:io'; //allow to check the platform
+// import 'package:flutter/services.dart'; allow to display only on landscape or portrait mode
 
 import './models/transaction.dart';
 import './widgets/chart.dart';
 import './widgets/new_transaction.dart';
 import './widgets/transaction_list.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  //allow only Portrait mode of our app.
+
+  // WidgetsFlutterBinding.ensureInitialized();
+  // SystemChrome.setPreferredOrientations(
+  //   [
+  //     DeviceOrientation.portraitUp,
+  //     DeviceOrientation.portraitDown,
+  //   ],
+  // );
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -53,6 +67,8 @@ class _MyHomePageState extends State<MyHomePage> {
     //     amount: 250.5,
     //     date: DateTime.now()),
   ];
+
+  bool _showChart = false;
 
 //dynamique calculator properties => getter;
   List<Transaction> get _recentTransactions {
@@ -103,21 +119,46 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: Text(
-          'Expense Planner',
-        ),
-        backgroundColor: Theme.of(context).primaryColorDark,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () => _displayInputTransactions(context),
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final PreferredSizeWidget appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+            middle: Text(
+              'Depenses Personnelle',
+            ),
+            backgroundColor: Theme.of(context).primaryColor,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  child: Icon(CupertinoIcons.add),
+                  onTap: () => _displayInputTransactions(context),
+                )
+              ],
+            ),
           )
-        ],
-      ),
-      body: SingleChildScrollView(
+        : AppBar(
+            title: Text(
+              'Depenses Personnelle',
+            ),
+            backgroundColor: Theme.of(context).primaryColorDark,
+            actions: [
+              IconButton(
+                icon: Icon(Icons.add),
+                onPressed: () => _displayInputTransactions(context),
+              )
+            ],
+          );
+    final txListWidget = Container(
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              mediaQuery.padding.top) *
+          0.71,
+      child: TransactionList(_userTransactions, _deleteTransaction),
+    );
+
+    final pageBody = SafeArea(
+      child: SingleChildScrollView(
         child: Column(
           //CrossAxisAlignment is use to align items left to right on a column
           //and top to bottom on a row
@@ -125,36 +166,70 @@ class _MyHomePageState extends State<MyHomePage> {
           //and left to right on a row.
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Chart(_recentTransactions),
-            _userTransactions.isEmpty
-                ? Column(
-                    children: [
-                      Container(
-                        height: 320,
-                        child: Image.asset(
-                          "assets/images/Startup life-pana.png",
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Text(
-                        "Aucune transaction ajoutée !",
-                        style: Theme.of(context).textTheme.headline6,
-                      ),
-                    ],
-                  )
-                : TransactionList(_userTransactions, _deleteTransaction),
+            if (isLandscape)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Afficher le chart',
+                    style: TextStyle(fontSize: 20, color: Colors.grey[700]),
+                  ),
+                  //Pour avoir un rendu adaptif en fonction de l'OS
+                  Switch.adaptive(
+                    value: _showChart,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _showChart = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            if (!isLandscape)
+              Container(
+                height: (mediaQuery.size.height -
+                        appBar.preferredSize.height -
+                        mediaQuery.padding.top) *
+                    0.29,
+                child: Chart(_recentTransactions),
+              ),
+            if (!isLandscape) txListWidget,
+            if (isLandscape)
+              _showChart
+                  ? Container(
+                      height: (mediaQuery.size.height -
+                              appBar.preferredSize.height -
+                              mediaQuery.padding.top) *
+                          0.7,
+                      child: Chart(_recentTransactions),
+                    )
+                  : txListWidget
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        child: Icon(
-          Icons.add,
-          color: Colors.white,
-        ),
-        onPressed: () => _displayInputTransactions(context),
-        backgroundColor: Theme.of(context).primaryColorDark,
-      ),
     );
+
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            navigationBar: appBar,
+            child: pageBody,
+          )
+        : Scaffold(
+            resizeToAvoidBottomInset: false,
+            appBar: appBar,
+            body: pageBody,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => _displayInputTransactions(context),
+                    backgroundColor: Theme.of(context).primaryColorDark,
+                  ),
+          );
   }
 }
